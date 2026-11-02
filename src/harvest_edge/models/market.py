@@ -1,11 +1,14 @@
 from datetime import date, datetime
 from decimal import Decimal
+from uuid import UUID, uuid4
 
 from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Numeric, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import Uuid
 
 from harvest_edge.models.base import Base, TimestampMixin
+from harvest_edge.models.reference import Location
 
 
 class DataSource(TimestampMixin, Base):
@@ -121,3 +124,26 @@ class IngestionLog(TimestampMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     records_processed: Mapped[int] = mapped_column(nullable=False, server_default="0")
     error_payload: Mapped[dict[str, object] | None] = mapped_column(JSONB)
+
+
+class Price(TimestampMixin, Base):
+    __tablename__ = "prices"
+    __table_args__ = (CheckConstraint("price_per_tonne > 0", name="positive_price"),)
+
+    id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    location_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("locations.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    commodity: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    price_per_tonne: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    effective_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    location: Mapped[Location] = relationship(back_populates="prices")

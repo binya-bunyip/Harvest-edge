@@ -22,6 +22,12 @@ The API is available at `http://localhost:8000`; OpenAPI docs are at `/docs`.
 
 ## API
 
+- `GET`, `POST`, `PUT`, and `DELETE /api/buyers` manage buyer records.
+- `GET`, `POST`, `PUT`, and `DELETE /api/locations` manage named locations;
+	creation and updates accept latitude/longitude coordinates and store an SRID
+	4326 PostGIS point. Location IDs are UUIDs.
+- `GET`, `POST`, `PUT`, and `DELETE /api/prices` manage grain prices. Listing
+	supports optional `location_id` and `commodity` filters.
 - `GET /api/bids` accepts `receival_site_id`, `commodity_id`, `grade_id`,
 	`season_id`, and `delivery_window_id` filters.
 - `GET /api/netback` requires `receival_site_id`, `port_terminal_id`, and

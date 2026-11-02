@@ -1,10 +1,18 @@
 from harvest_edge.models.base import Base
-from harvest_edge.models.market import BuyerBid, DataSource, HandlingFreightCharge, IngestionLog
+from harvest_edge.models.market import (
+    BuyerBid,
+    DataSource,
+    HandlingFreightCharge,
+    IngestionLog,
+    Price,
+)
 from harvest_edge.models.reference import (
+    Buyer,
     Commodity,
     DeliveryWindow,
     FreightCorridor,
     Grade,
+    Location,
     Operator,
     PortTerminal,
     ReceivalSite,
@@ -13,6 +21,7 @@ from harvest_edge.models.reference import (
 
 __all__ = [
     "Base",
+    "Buyer",
     "BuyerBid",
     "Commodity",
     "DataSource",
@@ -21,8 +30,10 @@ __all__ = [
     "Grade",
     "HandlingFreightCharge",
     "IngestionLog",
+    "Location",
     "Operator",
     "PortTerminal",
+    "Price",
     "ReceivalSite",
     "Season",
 ]

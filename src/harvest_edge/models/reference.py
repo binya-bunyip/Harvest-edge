@@ -1,12 +1,59 @@
 from datetime import date
 from decimal import Decimal
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKBElement
-from sqlalchemy import CheckConstraint, ForeignKey, Index, Numeric, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    CheckConstraint,
+    Float,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    UniqueConstraint,
+    text,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import Uuid
 
 from harvest_edge.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from harvest_edge.models.market import Price
+
+
+class Buyer(TimestampMixin, Base):
+    __tablename__ = "buyers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(254))
+    phone: Mapped[str | None] = mapped_column(String(30))
+
+
+class Location(TimestampMixin, Base):
+    __tablename__ = "locations"
+    __table_args__ = (
+        CheckConstraint("latitude BETWEEN -90 AND 90", name="latitude_range"),
+        CheckConstraint("longitude BETWEEN -180 AND 180", name="longitude_range"),
+        Index("idx_locations_point_gist", "point", postgresql_using="gist"),
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+    point: Mapped[WKBElement] = mapped_column(
+        Geometry(geometry_type="POINT", srid=4326, spatial_index=False), nullable=False
+    )
+    prices: Mapped[list["Price"]] = relationship(back_populates="location")
 
 
 class Operator(TimestampMixin, Base):

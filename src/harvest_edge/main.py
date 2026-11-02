@@ -5,7 +5,10 @@ from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
 
 from harvest_edge.api.bids import router as bids_router
+from harvest_edge.api.buyers import router as buyers_router
+from harvest_edge.api.locations import router as locations_router
 from harvest_edge.api.netback import router as netback_router
+from harvest_edge.api.prices import router as prices_router
 from harvest_edge.database import SessionFactory, engine
 
 
@@ -17,6 +20,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Harvest Edge API", version="0.1.0", lifespan=lifespan)
 app.include_router(bids_router)
+app.include_router(buyers_router)
+app.include_router(locations_router)
+app.include_router(prices_router)
 app.include_router(netback_router)
 
 
