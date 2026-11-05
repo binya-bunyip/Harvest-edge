@@ -17,7 +17,7 @@ class PriceItem(BaseModel):
 
 class BulkIngestPayload(BaseModel):
     batch_id: str
-    prices: list[PriceItem] = Field(..., max_items=1000)
+    prices: list[PriceItem] = Field(..., max_length=1000)
 
 @router.post("/prices", status_code=status.HTTP_202_ACCEPTED)
 async def bulk_upload_prices(payload: BulkIngestPayload, redis: ArqRedis = Depends(get_arq_redis)):

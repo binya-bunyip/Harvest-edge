@@ -60,3 +60,16 @@ async def delete_price(db: AsyncSession, price_id: UUID) -> bool:
     await db.delete(price)
     await db.commit()
     return True
+
+
+async def process_bulk_prices(ctx: dict, batch_id: str, records: list[dict]) -> int:
+    """Background Arq task to process and persist bulk price records."""
+    from harvest_edge.database import async_session_maker
+    
+    async with async_session_maker() as session:
+        async with session.begin():
+            for record_data in records:
+                price = Price(**record_data)
+                session.add(price)
+        await session.commit()
+    return len(records)
