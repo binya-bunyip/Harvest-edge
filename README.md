@@ -67,3 +67,45 @@ the database role must be allowed to install/use PostGIS for the initial
 migration. The included Compose credentials are for local development only.
 
 Run checks with `pytest` and `ruff check src tests migrations`.
+
+## Mock data seeding
+
+With the API and PostGIS database running and migrations applied, install the
+project dependencies and run the idempotent demo seeder:
+
+```bash
+pip install -e .
+python scripts/seed_data.py
+```
+
+The script creates or reuses two buyers, their locations, and Wheat, Barley,
+and Canola prices. Price records are AUD per tonne in this API; currency is
+implicit and is not a separate request field. It checks every seeded record
+through `GET /api/locations/nearby` with a commodity filter and fails if the
+location, associated buyer, or matching price is absent. Point it at another
+running API with `HARVEST_EDGE_API_URL=http://host:8000` or `--base-url`.
+`--radius-km` defaults to 10 and accepts values up to the API's 500 km ceiling.
+
+## Partner price ingestion plan
+
+For recurring partner updates, prefer a separate ingestion worker over
+in-process FastAPI background tasks:
+
+1. Implement a partner adapter that fetches a feed and maps it into validated
+   canonical records (`location_id`, `commodity`, `price_per_tonne`, and
+   timezone-aware `effective_date`), preserving source identifiers and
+   retrieval metadata.
+2. Add an authenticated `POST /api/prices/bulk-upload` endpoint with a bounded
+   batch size, strict per-record Pydantic validation, and an explicit
+   all-or-nothing transaction policy. Add a unique idempotency key (for example
+   source, location, commodity, and effective date) and use PostgreSQL upserts
+   so retries do not duplicate prices.
+3. Run recurring fetches in a separate Arq worker with a Redis queue, persisted
+   retry/backoff state, and a single-flight lock per partner. Keep request
+   handling independent from feed latency and transient partner outages.
+4. Record each run and rejected-record summaries in ingestion logs; emit
+   structured metrics for records accepted/rejected, retries, and feed
+   freshness. Protect partner credentials in deployment secrets.
+5. Test adapter parsing, duplicate/retry behavior, transaction rollback,
+   authorization, batch-size limits, and database-to-nearby API visibility
+   against PostGIS before enabling schedules in production.

@@ -15,7 +15,7 @@ from harvest_edge.models import Base
 
 @pytest.fixture
 async def client() -> AsyncIterator[AsyncClient]:
-    database_url = os.getenv("HARVEST_EDGE_TEST_DATABASE_URL")
+    database_url = os.getenv("HARVEST_EDGE_TEST_DATABASE_URL") or os.getenv("TEST_DATABASE_URL")
     if not database_url:
         pytest.skip("Set HARVEST_EDGE_TEST_DATABASE_URL to run API integration tests")
 
@@ -28,6 +28,7 @@ async def client() -> AsyncIterator[AsyncClient]:
     test_engine = create_async_engine(
         database_url,
         connect_args={"server_settings": {"search_path": f"{schema},public"}},
+        execution_options={"schema_translate_map": {None: schema}},
     )
     try:
         async with test_engine.begin() as connection:
