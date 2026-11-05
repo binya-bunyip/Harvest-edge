@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Numeric, String, text
@@ -9,6 +10,9 @@ from sqlalchemy.types import Uuid
 
 from harvest_edge.models.base import Base, TimestampMixin
 from harvest_edge.models.reference import Location
+
+if TYPE_CHECKING:
+    from harvest_edge.models.api_key import ApiKey
 
 
 class Buyer(TimestampMixin, Base):
@@ -20,6 +24,9 @@ class Buyer(TimestampMixin, Base):
     phone: Mapped[str | None] = mapped_column(String(30))
 
     locations: Mapped[list[Location]] = relationship(
+        back_populates="buyer", cascade="all, delete-orphan"
+    )
+    api_keys: Mapped[list["ApiKey"]] = relationship(
         back_populates="buyer", cascade="all, delete-orphan"
     )
 

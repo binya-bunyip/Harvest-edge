@@ -1,57 +1,7 @@
-import os
-from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from uuid import uuid4
 
-import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from harvest_edge.api.dependencies import get_session
-from harvest_edge.main import app
-from harvest_edge.models import Base
-
-
-@pytest.fixture
-async def client() -> AsyncIterator[AsyncClient]:
-    database_url = os.getenv("HARVEST_EDGE_TEST_DATABASE_URL") or os.getenv("TEST_DATABASE_URL")
-    if not database_url:
-        pytest.skip("Set HARVEST_EDGE_TEST_DATABASE_URL to run API integration tests")
-
-    schema = f"test_prices_{uuid4().hex}"
-    admin_engine = create_async_engine(database_url)
-    async with admin_engine.begin() as connection:
-        await connection.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
-        await connection.execute(text(f'CREATE SCHEMA "{schema}"'))
-
-    test_engine = create_async_engine(
-        database_url,
-        connect_args={"server_settings": {"search_path": f"{schema},public"}},
-        execution_options={"schema_translate_map": {None: schema}},
-    )
-    try:
-        async with test_engine.begin() as connection:
-            await connection.run_sync(Base.metadata.create_all)
-
-        session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
-
-        async def override_get_session() -> AsyncIterator[AsyncSession]:
-            async with session_factory() as session:
-                yield session
-
-        app.dependency_overrides[get_session] = override_get_session
-        async with AsyncClient(
-            transport=ASGITransport(app=app),
-            base_url="http://testserver",
-        ) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.pop(get_session, None)
-        await test_engine.dispose()
-        async with admin_engine.begin() as connection:
-            await connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
-        await admin_engine.dispose()
+from httpx import AsyncClient
 
 
 async def create_location(

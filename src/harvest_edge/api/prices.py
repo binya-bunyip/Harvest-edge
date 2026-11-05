@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from harvest_edge.api.constraints import run_with_integrity_handling
 from harvest_edge.api.dependencies import get_session
+from harvest_edge.api.deps import require_scopes
 from harvest_edge.schemas.price import PriceCreate, PriceRead, PriceUpdate
 from harvest_edge.services.price import (
     create_price,
@@ -18,7 +19,12 @@ from harvest_edge.services.price import (
 router = APIRouter(prefix="/api/prices", tags=["prices"])
 
 
-@router.post("", response_model=PriceRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=PriceRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scopes(["write:prices"]))],
+)
 async def create(
     price_data: PriceCreate,
     session: Annotated[AsyncSession, Depends(get_session)],

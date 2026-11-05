@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from harvest_edge.api.constraints import run_with_integrity_handling
 from harvest_edge.api.dependencies import get_session
+from harvest_edge.api.deps import require_scopes
 from harvest_edge.schemas.locations import LocationCreate, LocationRead, LocationUpdate
 from harvest_edge.schemas.nearby import NearbyLocationRead
 from harvest_edge.schemas.price import PriceRead
@@ -21,7 +22,12 @@ from harvest_edge.services.locations import (
 router = APIRouter(prefix="/api/locations", tags=["locations"])
 
 
-@router.post("", response_model=LocationRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=LocationRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scopes(["write:prices"]))],
+)
 async def create(
     location_data: LocationCreate,
     session: Annotated[AsyncSession, Depends(get_session)],

@@ -1,3 +1,4 @@
+from harvest_edge.models.api_key import ApiKey
 from harvest_edge.models.base import Base
 from harvest_edge.models.market import (
     Buyer,
@@ -21,6 +22,7 @@ from harvest_edge.models.reference import (
 
 __all__ = [
     "Base",
+    "ApiKey",
     "Buyer",
     "BuyerBid",
     "Commodity",

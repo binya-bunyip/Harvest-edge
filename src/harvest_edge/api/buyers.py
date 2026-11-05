@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from harvest_edge.api.constraints import run_with_integrity_handling
 from harvest_edge.api.dependencies import get_session
+from harvest_edge.api.deps import require_scopes
 from harvest_edge.schemas.buyers import BuyerCreate, BuyerRead, BuyerUpdate
 from harvest_edge.services.buyers import (
     create_buyer,
@@ -17,7 +18,12 @@ from harvest_edge.services.buyers import (
 router = APIRouter(prefix="/api/buyers", tags=["buyers"])
 
 
-@router.post("", response_model=BuyerRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=BuyerRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scopes(["write:prices"]))],
+)
 async def create(
     buyer_data: BuyerCreate,
     session: Annotated[AsyncSession, Depends(get_session)],

@@ -8,9 +8,10 @@ settings = get_settings()
 engine = create_async_engine(
     str(settings.database_url), echo=settings.database_echo, pool_pre_ping=True
 )
-SessionFactory = async_sessionmaker(engine, expire_on_commit=False)
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+SessionFactory = async_session_maker
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    async with SessionFactory() as session:
+    async with async_session_maker() as session:
         yield session

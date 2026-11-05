@@ -49,6 +49,22 @@ Netback is calculated as FOB export price less freight, receival, and handling
 costs, then less the sum of the bid and charge uncertainty margins. Values are
 AUD per tonne; negative netbacks are returned as-is.
 
+### Authentication
+
+`POST /api/buyers`, `POST /api/locations`, and `POST /api/prices` require an
+`X-API-Key` or an `Authorization: Bearer <JWT>` credential with the
+`write:prices` scope. `POST /api/admin/keys` requires `admin:all`. API keys are
+shown only when created; only their SHA-256 hashes are stored. Keep the one-time
+response secure. Bootstrap the first global administrator key through a trusted
+offline provisioning process.
+
+Bearer tokens use HS256 and require an `exp` claim. Configure
+`HARVEST_EDGE_JWT_SECRET_KEY` with a secret of at least 32 characters. When
+configured, `HARVEST_EDGE_JWT_ISSUER` and `HARVEST_EDGE_JWT_AUDIENCE` are also
+validated. Token scopes may be provided as a space-delimited `scope` string or
+a `scopes` string array; an optional integer `buyer_id` is returned in the
+principal context. Without the JWT secret, bearer tokens are rejected.
+
 ## Ingestion
 
 `PublicCashBidScraper` and `ReceivalScheduleScraper` parse configurable public
