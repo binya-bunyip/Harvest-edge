@@ -12,20 +12,29 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 cp .env.example .env
-docker compose up -d db
-alembic upgrade head
-uvicorn harvest_edge.main:app --reload --app-dir src
+docker compose up --build -d
+docker compose exec web alembic upgrade head
+docker compose run --rm test
 ```
 
 The API is available at `http://localhost:8000`; OpenAPI docs are at `/docs`.
 `GET /health` is a liveness check and `GET /ready` checks database connectivity.
+Compose waits for PostGIS readiness before starting the API and test runner.
+The test runner creates and uses a separate `harvest_edge_test` database.
+The example `postgres` credentials are for local development only; set unique
+strong credentials and URL-encode special characters in database URLs for
+deployments.
 
 ## API
 
 - `GET`, `POST`, `PUT`, and `DELETE /api/buyers` manage buyer records.
 - `GET`, `POST`, `PUT`, and `DELETE /api/locations` manage named locations;
 	creation and updates accept latitude/longitude coordinates and store an SRID
-	4326 PostGIS point. Location IDs are UUIDs.
+	4326 PostGIS geography point. Location IDs are UUIDs. `GET /api/locations/nearby`
+	accepts `lat`, `lon`, optional `radius_km` (default 50), and an optional
+	`commodity` filter, plus `limit` (default 50, maximum 200) and `offset`
+	pagination; it returns matching locations, their buyers, and advertised prices.
+	Locations are assigned to a buyer by `buyer_id`.
 - `GET`, `POST`, `PUT`, and `DELETE /api/prices` manage grain prices. Listing
 	supports optional `location_id` and `commodity` filters.
 - `GET /api/bids` accepts `receival_site_id`, `commodity_id`, `grade_id`,

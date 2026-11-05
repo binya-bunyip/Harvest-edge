@@ -1,5 +1,6 @@
 from harvest_edge.models.base import Base
 from harvest_edge.models.market import (
+    Buyer,
     BuyerBid,
     DataSource,
     HandlingFreightCharge,
@@ -7,7 +8,6 @@ from harvest_edge.models.market import (
     Price,
 )
 from harvest_edge.models.reference import (
-    Buyer,
     Commodity,
     DeliveryWindow,
     FreightCorridor,

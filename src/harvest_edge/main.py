@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -13,7 +13,7 @@ from harvest_edge.database import SessionFactory, engine
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     yield
     await engine.dispose()
 
@@ -24,6 +24,16 @@ app.include_router(buyers_router)
 app.include_router(locations_router)
 app.include_router(prices_router)
 app.include_router(netback_router)
+
+
+@app.get("/", tags=["health"])
+async def root() -> dict[str, str]:
+    return {
+        "service": "Harvest Edge API",
+        "docs": "/docs",
+        "health": "/health",
+        "readiness": "/ready",
+    }
 
 
 @app.get("/health", tags=["health"])

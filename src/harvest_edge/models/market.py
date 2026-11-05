@@ -11,6 +11,19 @@ from harvest_edge.models.base import Base, TimestampMixin
 from harvest_edge.models.reference import Location
 
 
+class Buyer(TimestampMixin, Base):
+    __tablename__ = "buyers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(254))
+    phone: Mapped[str | None] = mapped_column(String(30))
+
+    locations: Mapped[list[Location]] = relationship(
+        back_populates="buyer", cascade="all, delete-orphan"
+    )
+
+
 class DataSource(TimestampMixin, Base):
     __tablename__ = "data_sources"
 

@@ -1,7 +1,6 @@
-import struct
 from uuid import UUID
 
-from geoalchemy2.elements import WKBElement
+from geoalchemy2.elements import WKTElement
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,9 +8,8 @@ from harvest_edge.models import Location
 from harvest_edge.schemas.locations import LocationCreate, LocationUpdate
 
 
-def _point_from_coordinates(latitude: float, longitude: float) -> WKBElement:
-    ewkb = struct.pack("<BIIdd", 1, 0x20000001, 4326, longitude, latitude)
-    return WKBElement(ewkb, srid=4326, extended=True)
+def _point_from_coordinates(latitude: float, longitude: float) -> WKTElement:
+    return WKTElement(f"POINT({longitude} {latitude})", srid=4326)
 
 
 async def create_location(db: AsyncSession, location_data: LocationCreate) -> Location:

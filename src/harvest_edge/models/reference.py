@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from geoalchemy2 import Geometry
+from geoalchemy2 import Geography, Geometry
 from geoalchemy2.elements import WKBElement
 from sqlalchemy import (
     CheckConstraint,
@@ -21,16 +21,7 @@ from sqlalchemy.types import Uuid
 from harvest_edge.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from harvest_edge.models.market import Price
-
-
-class Buyer(TimestampMixin, Base):
-    __tablename__ = "buyers"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    email: Mapped[str | None] = mapped_column(String(254))
-    phone: Mapped[str | None] = mapped_column(String(30))
+    from harvest_edge.models.market import Buyer, Price
 
 
 class Location(TimestampMixin, Base):
@@ -48,12 +39,18 @@ class Location(TimestampMixin, Base):
         server_default=text("gen_random_uuid()"),
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    buyer_id: Mapped[int] = mapped_column(
+        ForeignKey("buyers.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     point: Mapped[WKBElement] = mapped_column(
-        Geometry(geometry_type="POINT", srid=4326, spatial_index=False), nullable=False
+        Geography(geometry_type="POINT", srid=4326, spatial_index=False), nullable=False
     )
-    prices: Mapped[list["Price"]] = relationship(back_populates="location")
+    buyer: Mapped["Buyer"] = relationship(back_populates="locations")
+    prices: Mapped[list["Price"]] = relationship(
+        back_populates="location", cascade="all, delete-orphan"
+    )
 
 
 class Operator(TimestampMixin, Base):
